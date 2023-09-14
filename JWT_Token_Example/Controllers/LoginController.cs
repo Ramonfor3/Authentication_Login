@@ -1,9 +1,8 @@
-﻿using Authentication_Login.Models;
+﻿using Authentication_Login.Dtos.LoginUsers;
+using Authentication_Login.Response;
+using Authentication_Login.Service.Abstract;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Text;
 
 namespace Authentication_Login.Controllers
 {
@@ -11,50 +10,29 @@ namespace Authentication_Login.Controllers
     [ApiController]
     public class LoginController : ControllerBase
     {
-        private readonly IConfiguration _config;
-        private readonly UserApplicationDbContext _dbContext;
+        private readonly IGenerateTokenService _generateToken;
+        private readonly ILoginService _login;
 
-        public LoginController(IConfiguration configuration, UserApplicationDbContext dbContext)
+        public LoginController(IGenerateTokenService generateToken, ILoginService login)
         {
-            _config = configuration;
-            _dbContext = dbContext;
+            _generateToken = generateToken;
+            _login = login;
         }
 
-        private Users AuthenticateUser(Users users)
-        {
-
-            var validateUser = _dbContext.Users.FirstOrDefault(u => u.UserName == users.UserName && u.Password == users.Password && u.EmailAddress == users.EmailAddress && u.IsDeleted ==false);
-            Users _user = null;
-            if (validateUser != null)
-            {
-                _user = new Users() { UserName = users.UserName, Password = users.Password, EmailAddress = users.EmailAddress, IsDeleted = true };
-            }
-
-            return _user;
-        }
-
-        private string GenerateToken(Users users)
-        {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(_config["Jwt:Issuer"], _config["Jwt:Audience"], null,
-                expires: DateTime.Now.AddMinutes(2),
-                signingCredentials: credentials);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
+        [Authorize]
+        [HttpPost("Authentication")]
+        public Task<ApiResponse<LoginUserDto>> AuthenticateUser(LoginUserDto users) => _login.AuthenticateUser(users);
 
         [AllowAnonymous]
-        [HttpPost]
-        public IActionResult Login(Users users)
+        [HttpPost("GenerateToken")]
+        public IActionResult Login(LoginUserDto users)
         {
             IActionResult response = Unauthorized();
             var user = AuthenticateUser(users);
             if (user != null)
             {
-                var token = GenerateToken(users);
-                response = Ok(new { token = token });
+                var token = _generateToken.GenerateToken(users);
+                response = Ok(new { token = $"Bearer {token}" });
             }
             return response;
         }

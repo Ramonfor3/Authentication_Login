@@ -6,7 +6,6 @@ using Authentication_Login.Response;
 using Authentication_Login.Service.Abstract;
 using Authentication_Login.Validation;
 using AutoMapper;
-using FluentValidation;
 using FluentValidation.Results;
 
 namespace Authentication_Login.Service.Concret
@@ -25,7 +24,7 @@ namespace Authentication_Login.Service.Concret
         public async Task<UserDto> AddUser(CreateUserDto users)
         {
             Validation(users);
-            if (users == null)throw new ArgumentNullException(nameof(users));
+            if (users == null) throw new ArgumentNullException(nameof(users));
             var userMapped = await _repository.AddUser(_mapper.Map<Users>(users));
             return _mapper.Map<UserDto>(userMapped);
         }
@@ -58,7 +57,7 @@ namespace Authentication_Login.Service.Concret
             var apiResponse = new ApiResponse<GetUserDto>();
             var user = _mapper.Map<IEnumerable<GetUserDto>>(await _repository.GetById(Id));
             if (user == null) throw new NotFoundException($"User with {Id} is not found");
-            
+
             apiResponse.result = new ResultBody<GetUserDto>
             {
                 items = user.ToList(),

@@ -18,8 +18,11 @@ namespace Authentication_Login
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IGenerateTokenService, GenerateTokenService>();
+            services.AddScoped<ILoginService, LoginService>();
 
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ILoginRepository, LoginRepository>();
         }
     }
 }
